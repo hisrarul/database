@@ -1,0 +1,28 @@
+pipeline{
+    agent any
+    parameters{
+        string(name: 'StackName', defaultValue: '', description: 'Enter name of the stack.')
+        string(name: 'DBAllocatedStorage', defaultValue: '5', description: 'Enter storage amount in GB.')
+        choice(name: 'DBInstanceClass', choices: 'db.t2.small\ndb.m1.small\ndb.m3.large', description: 'Choice instance type for DB.')
+        string(name: 'DBName', defaultValue: 'rdsdemo', description: 'Enter DB Name.')
+        string(name: 'DBUser', defaultValue: 'admin', description: 'Enter DB username.')
+        password(name: 'DBPassword', defaultValue: 'admin123', description: 'Enter DB password.')
+        string(name: 'EC2SecurityGroup', defaultValue: 'default', description: 'EC2 security group name that contains instances that need access to the database.')
+        booleanParam(defaultValue: false, description: 'MultiAvailability Zone', name: 'MultiAZ')
+    }
+    stages{
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/hisrarul/database.git'
+            }
+        }
+        stage('Create RDS') {
+            steps {
+            sh ("""
+            aws cloudformation create-stack --stack-name ${params.StackName} --region 'ap-southeast-1' --template-body file://CFN_RDS.yaml --parameters ParameterKey=DBAllocatedStorage,ParameterValue=${params.DBAllocatedStorage} ParameterKey=DBInstanceClass,ParameterValue=${params.DBInstanceClass} ParameterKey=DBName,ParameterValue=${params.DBName} ParameterKey=DBPassword,ParameterValue=${params.DBPassword} ParameterKey=EC2SecurityGroup,ParameterValue=${params.EC2SecurityGroup} ParameterKey=MultiAZ,ParameterValue=${params.MultiAZ} ParameterKey=DBUser,ParameterValue=${params.DBUser}
+            """)
+            }
+            
+        }
+    }
+}
